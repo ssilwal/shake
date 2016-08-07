@@ -68,6 +68,10 @@ public class SignActivity extends AppCompatActivity implements SensorEventListen
             capturing = false;
             signText.setText(shakeSaved + startCapture);
 
+            for (int i = 0; i < readings.size(); i++) {
+                readings.remove(i / 2);
+            }
+
             new SigningTask().execute(new Gson().toJson(new APIObject(username, "signature", readings)));
             readings = new LinkedList<>();
         } else {
