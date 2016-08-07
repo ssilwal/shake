@@ -26,6 +26,7 @@ def init_db():
 @app.cli.command('initdb')
 def initdb_command():
     """Initializes the database"""
+    print('Trying to initialize...')
     init_db()
     print ('Initialized the database.')
 
@@ -46,10 +47,10 @@ def close_db(error):
     if hasattr(g, 'sqlite_db'):
         g.sqlite_db.close()
 @app.route('/')
-def show_entries():
+def show_shakes():
     db = get_db()
-    cur = db.execute('select username,type from shakes order by id desc')
-    entries = cur.fetchall()
+    cur = db.execute('select username, shakedata from shakes order by id desc')
+    shakes = cur.fetchall()
     return render_template("show_shakes.html", shakes=shakes)
 @app.route('/add', methods=['POST'])
 def add_shake():
