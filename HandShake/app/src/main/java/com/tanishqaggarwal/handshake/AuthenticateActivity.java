@@ -6,6 +6,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -33,10 +34,11 @@ public class AuthenticateActivity extends AppCompatActivity implements SensorEve
     private List<Sensor> deviceSensors;
     private List<SensorReading> readings;
     private boolean capturing;
+    private long timezero;
 
-    private String shakeSaved = "Shake saved. ";
+    private String shakeSaved = "Shake sent for authentication.";
     private String startCapture = "Tap this text to start capturing your shake.";
-    private String stopCapture = "Tap to stop capturing shake";
+    private String stopCapture = "Tap to stop capturing shake.";
 
     private String username;
 
@@ -56,33 +58,16 @@ public class AuthenticateActivity extends AppCompatActivity implements SensorEve
         signText = (TextView) findViewById(R.id.authenticateText);
 
         signText.setText(startCapture);
-
+        timezero = System.currentTimeMillis();
     }
 
     public void toggleCapture(View v) {
         if (capturing) {
             capturing = false;
-            signText.setText(shakeSaved + startCapture);
+            signText.setText(shakeSaved);
 
-            RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
-
-            Gson gsonObj = new Gson();
-            try {
-                JSONObject jsonData = new JSONObject(gsonObj.toJson(new APIObject(username, "authentication", readings)));
-                JsonObjectRequest jsonObj = new JsonObjectRequest("http://" + R.string.URL + R.string.PORT + "/authenticate", jsonData, this, new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Toast.makeText(getApplicationContext(), "Authentication failed!", Toast.LENGTH_LONG).show();
-                        startActivity(new Intent(AuthenticateActivity.this, MainActivity.class));
-                        finish();
-                    }
-                });
-                requestQueue.add(jsonObj);
-            }
-            catch (JSONException e) {
-            }
-        }
-        else {
+            new AuthenticationTask().execute(new Gson().toJson(new APIObject(username, "authentication", readings)));
+        } else {
             capturing = true;
             signText.setText(stopCapture);
         }
@@ -114,28 +99,28 @@ public class AuthenticateActivity extends AppCompatActivity implements SensorEve
             SensorReading previousReading;
             if (readings.size() > 0) {
                 previousReading = readings.get(readings.size() - 1);
-            }
-            else {
+            } else {
                 previousReading = new SensorReading();
-                previousReading.setTime(0);
-                previousReading.setAccelData(new float[] {0f,0f,0f});
-                previousReading.setGyroData(new float[] {0f,0f,0f});
-                previousReading.setMagneticData(new float[] {0f,0f,0f});
+                timezero = System.currentTimeMillis();
+                previousReading.setTime(timezero);
+                previousReading.setAccelData(new float[]{0f, 0f, 0f});
+                previousReading.setGyroData(new float[]{0f, 0f, 0f});
+                previousReading.setMagneticData(new float[]{0f, 0f, 0f});
             }
 
-            reading.setTime(System.currentTimeMillis() - previousReading.getTime());
+            reading.setTime(System.currentTimeMillis() - timezero);
             reading.setAccelData(previousReading.getAccelData());
             reading.setGyroData(previousReading.getGyroData());
             reading.setMagneticData(previousReading.getMagneticData());
 
             if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-                reading.setAccelData(new float[] {event.values[0], event.values[1], event.values[2]});
+                reading.setAccelData(new float[]{event.values[0], event.values[1], event.values[2]});
             }
             if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
-                reading.setAccelData(new float[] {event.values[0], event.values[1], event.values[2]});
+                reading.setGyroData(new float[]{event.values[0], event.values[1], event.values[2]});
             }
             if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-                reading.setAccelData(new float[] {event.values[0], event.values[1], event.values[2]});
+                reading.setMagneticData(new float[]{event.values[0], event.values[1], event.values[2]});
             }
 
             readings.add(reading);
@@ -144,6 +129,33 @@ public class AuthenticateActivity extends AppCompatActivity implements SensorEve
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
+    private class AuthenticationTask extends AsyncTask<String, Void, Boolean> {
+        protected Boolean doInBackground(String... data) {
+            try {
+                Log.i("HandShake", data[0]);
+                JSONObject jsonData = new JSONObject(data[0]);
+                String response = HTTPClient.postData("http://" + getString(R.string.URL) + ":" + getString(R.string.PORT) + "/authenticate", jsonData);
+                JSONObject jsonResponse = new JSONObject(response);
+                return jsonResponse.getBoolean("authenticated");
+            } catch (Exception e) {
+                Log.e("HandShake", "Something went wrong", e);
+                return false;
+            }
+        }
+
+        protected void onPostExecute(Boolean result) {
+            if (result) {
+                Toast.makeText(getApplicationContext(), "Authenticated successfully.", Toast.LENGTH_LONG);
+                startActivity(new Intent(AuthenticateActivity.this, MainActivity.class));
+            } else {
+                Log.e("HandShake", "Authentication failure");
+                Toast.makeText(getApplicationContext(), "Authentication failed!", Toast.LENGTH_LONG);
+                startActivity(new Intent(AuthenticateActivity.this, MainActivity.class));
+            }
+        }
 
     }
 }
