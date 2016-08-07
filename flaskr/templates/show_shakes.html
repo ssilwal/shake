@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block body %}
+  {% if session.logged_in %}
+    <form action="{{ url_for('add_shake') }}" method=post class=add-shake>
+      <dl>
+        <dt>Title:
+        <dd><input type=text size=30 name=username>
+        <dt>Text:
+        <dd><textarea name=shakedata rows=5 cols=40></textarea>
+        <dd><input type=submit value=Share>
+      </dl>
+    </form>
+  {% endif %}
+  <ul class=shakes>
+  {% for shake in shakes %}
+    <li><h2>{{ shake.username }}</h2>{{ shake.shakedata|safe }}
+  {% else %}
+    <li><em>Unbelievable.  No entries here so far</em>
+  {% endfor %}
+  </ul>
+{% endblock %}
