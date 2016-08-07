@@ -1,9 +1,17 @@
 package com.tanishqaggarwal.handshake;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.Volley;
 import com.google.gson.Gson;
 
 import android.app.DownloadManager;
 import android.content.Context;
+import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -13,11 +21,15 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.LinkedList;
 import java.util.List;
 
-public class SignActivity extends AppCompatActivity implements SensorEventListener {
+public class SignActivity extends AppCompatActivity implements SensorEventListener, Response.Listener<JSONObject> {
 
     private TextView signText;
     private SensorManager sensorManager;
@@ -37,6 +49,9 @@ public class SignActivity extends AppCompatActivity implements SensorEventListen
         setContentView(R.layout.activity_sign);
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        sensorManager.registerListener(SignActivity.this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
+        sensorManager.registerListener(SignActivity.this, sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
+        sensorManager.registerListener(SignActivity.this, sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
         deviceSensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
         readings      = new LinkedList<>();
 
@@ -51,16 +66,35 @@ public class SignActivity extends AppCompatActivity implements SensorEventListen
             capturing = false;
             signText.setText(shakeSaved + startCapture);
 
+            RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
+
             Gson gsonObj = new Gson();
-            String jsonData = gsonObj.toJson(new APIObject(username, "signature", readings));
-
-
+            try {
+                JSONObject jsonData = new JSONObject(gsonObj.toJson(new APIObject(username, "signature", readings)));
+                Log.i("HandShake", "Going to send: " + jsonData.toString());
+                JsonObjectRequest jsonObj = new JsonObjectRequest(JsonObjectRequest.Method.POST, "http://" + R.string.URL + R.string.PORT + "/sign", jsonData, SignActivity.this, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e("HandShake", "Error during signature submission.");
+                        Toast.makeText(getApplicationContext(), "There was an error during submission of the signature. Please try again.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+                requestQueue.add(jsonObj);
+            }
+            catch (JSONException e) {
+            }
         }
         else {
             capturing = true;
             signText.setText(stopCapture);
         }
+    }
 
+    @Override
+    public void onResponse(JSONObject response) {
+        Toast.makeText(getApplicationContext(), "Signature recorded!", Toast.LENGTH_SHORT).show();
+        startActivity(new Intent(this, MainActivity.class));
+        finish();
     }
 
     @Override
@@ -99,7 +133,5 @@ public class SignActivity extends AppCompatActivity implements SensorEventListen
     }
 
     @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-    }
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 }

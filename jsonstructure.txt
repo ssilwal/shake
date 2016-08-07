@@ -1,7 +1,7 @@
 {
-"username" : STRING,
-"type"     : "auth" or "signature",
-"data"     : [{
+username : STRING,
+type     : "auth" or "signature",
+data     : [{
 		"time" : LONGINT,
 		"data" : [a_x, a_y, a_z, g_x, g_y, g_z, m_x, m_y, m_z],
 		}, ...],
