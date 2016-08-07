@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">Hand Shake</string>
-    <string name="URL">10.20.1.169</string>
-    <string name="PORT">8080</string>
+    <string name="URL">mlh-prime-tanishqaggarwal.c9users.io</string>
+    <string name="PORT">80</string>
 </resources>

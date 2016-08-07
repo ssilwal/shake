@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block body %}
+  <ul class=online_all>
+    {% for online_one in online_all %}
+      <li><h2>{{ online_one.username }}</h2>{{ online_one.type }}
+        <br/>{{ online_one.data }}
+    {% endfor %}
+  </ul>
+{% endblock %}
