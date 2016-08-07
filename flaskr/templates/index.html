@@ -1,0 +1,9 @@
+<!doctype html>
+<ul class=online_users>
+{% for user in online_users %}
+  <li><h2>{{ user }}</h2> Text Here
+{% else %}
+  <li><em>Unbelievable.  No entries here so far</em>
+{% endfor %}
+</ul>
+s
