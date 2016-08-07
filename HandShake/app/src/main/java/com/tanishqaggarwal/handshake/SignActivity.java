@@ -53,7 +53,8 @@ public class SignActivity extends AppCompatActivity implements SensorEventListen
 
             Gson gsonObj = new Gson();
             String jsonData = gsonObj.toJson(new APIObject(username, "signature", readings));
-            JSONObjectRequest
+
+
         }
         else {
             capturing = true;
