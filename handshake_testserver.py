@@ -5,8 +5,9 @@ counter = 0
 
 @app.route("/authenticate", methods=["POST"])
 def authenticateapi():
-	f = fopen("file" + str(counter) + ".txt", "w")
-	f.write(jsonify(request.json))
+	global counter
+	f = open("file" + str(counter) + ".txt", "w")
+	f.write(request.data)
 	f.close()
 	counter += 1
 	return jsonify({
